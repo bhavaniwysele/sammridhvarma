@@ -1,14 +1,26 @@
+import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import Base, engine
 from app.routes.latest_news_routes import router as news_router
-from fastapi.staticfiles import StaticFiles
-app = FastAPI()
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Create tables
+app = FastAPI(title="Latest News API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+UPLOAD_DIR = "/tmp/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 Base.metadata.create_all(bind=engine)
 
-# Register routes
 app.include_router(news_router)
 
 

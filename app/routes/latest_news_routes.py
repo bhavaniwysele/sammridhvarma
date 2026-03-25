@@ -9,7 +9,7 @@ from app.models.latest_news import LatestNews
 
 router = APIRouter(prefix="/latest-news", tags=["Latest News"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "/tmp/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
