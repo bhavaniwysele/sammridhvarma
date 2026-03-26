@@ -6,6 +6,7 @@ from app.database import Base, engine
 from app.routes.latest_news_routes import router as news_router
 from app.routes.appointment_routes import router 
 from app.models.appointments import Appointment  
+from app.routes import issue_routes
 
 app = FastAPI(title="sammridhvarma")
 
@@ -26,3 +27,4 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(news_router)
 app.include_router(router)
+app.include_router(issue_routes.router)

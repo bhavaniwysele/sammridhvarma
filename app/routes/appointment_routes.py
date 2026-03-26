@@ -21,13 +21,13 @@ def create_appointment(
 
     email: str = Form(None),
 
-    district: str = Form(...),
-    village: str = Form(...),
+    district: str = Form(None),
+    village: str = Form(None),
 
     constituency: str = Form(...),
     preferred_date: str = Form(...),
     time_slot: str = Form(...),
-    issue_category: str = Form(...),
+    issue_category: str = Form(None),
 
     subject: str = Form(...),
     description: str = Form(...),
