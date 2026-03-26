@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models.issues import Issue
 import shutil, os, re
 
-router = APIRouter()
+router = APIRouter(prefix="/issues", tags=["issues"])
 
 UPLOAD_FOLDER = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 
