@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response
 from app.database import Base, engine
 from app.routes.latest_news_routes import router as news_router
@@ -25,15 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 try:
-    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-except Exception:
-    pass
-
-try:
-    if engine:
+    if engine is not None:
         Base.metadata.create_all(bind=engine)
 except Exception:
     pass
