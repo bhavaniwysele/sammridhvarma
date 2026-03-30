@@ -48,11 +48,12 @@ async def create_press_release(
     for file in files:
         if not file.filename:
             continue
-        url = upload_to_s3(file)
-        file_urls.append(url)
         file.file.seek(0, 2)
         size_bytes = file.file.tell() / 1024
         size = f"{size_bytes/1024:.1f} MB" if size_bytes > 1024 else f"{size_bytes:.1f} KB"
+        file.file.seek(0)
+        url = upload_to_s3(file)
+        file_urls.append(url)
         file_sizes.append(size)
 
     new_item = PressRelease(
@@ -122,11 +123,12 @@ async def update_press_release(
 
     real_files = [f for f in (files or []) if f and f.filename and f.filename.strip() != ""]
     for file in real_files:
-        url = upload_to_s3(file)
-        existing_urls.append(url)
         file.file.seek(0, 2)
         size_kb = file.file.tell() / 1024
         size = f"{size_kb/1024:.1f} MB" if size_kb > 1024 else f"{size_kb:.1f} KB"
+        file.file.seek(0)
+        url = upload_to_s3(file)
+        existing_urls.append(url)
         existing_sizes.append(size)
 
     item.file_urls = ",".join(existing_urls)
