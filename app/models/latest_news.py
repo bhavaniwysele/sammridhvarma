@@ -11,3 +11,4 @@ class LatestNews(Base):
     description = Column(Text)
     mainimageurl = Column(Text)
     additionalimageurl = Column(Text)
+    deleted_images = Column(Text, default="")
