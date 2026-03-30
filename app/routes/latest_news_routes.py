@@ -60,11 +60,7 @@ def create_news(
 # READ ALL
 @router.get("/")
 def get_latest_news(db: Session = Depends(get_db)):
-    news_list = db.query(LatestNews).order_by(LatestNews.id.desc()).limit(4).all()
-    for news in news_list:
-        deleted = parse_images(news.deleted_images)
-        news.additionalimageurl = ",".join([img for img in parse_images(news.additionalimageurl) if img not in deleted])
-    return news_list
+    return db.query(LatestNews).order_by(LatestNews.id.desc()).limit(4).all()
 
 
 # READ ONE
@@ -73,8 +69,6 @@ def get_news(id: int, db: Session = Depends(get_db)):
     news = db.query(LatestNews).filter(LatestNews.id == id).first()
     if not news:
         raise HTTPException(status_code=404, detail="News not found")
-    deleted = parse_images(news.deleted_images)
-    news.additionalimageurl = ",".join([img for img in parse_images(news.additionalimageurl) if img not in deleted])
     return news
 
 
@@ -126,36 +120,23 @@ def update_news(
     return news
 
 
-# SOFT DELETE additional images
-@router.patch("/{id}/images/soft-delete")
-def soft_delete_images(id: int, image_urls: List[str], db: Session = Depends(get_db)):
+# DELETE SINGLE ADDITIONAL IMAGE
+@router.delete("/{id}/image")
+def delete_single_image(id: int, image_url: str, db: Session = Depends(get_db)):
     news = db.query(LatestNews).filter(LatestNews.id == id).first()
     if not news:
         raise HTTPException(status_code=404, detail="News not found")
 
-    deleted = list(set(parse_images(news.deleted_images) + image_urls))
-    news.deleted_images = ",".join(deleted)
+    images = parse_images(news.additionalimageurl)
+    if image_url not in images:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    images.remove(image_url)
+    news.additionalimageurl = ",".join(images)
+    delete_from_s3(image_url)
+
     db.commit()
-    db.refresh(news)
-
-    active = [img for img in parse_images(news.additionalimageurl) if img not in deleted]
-    return {"message": "Images soft-deleted", "active_images": active, "deleted_images": deleted}
-
-
-# RESTORE soft-deleted additional images
-@router.patch("/{id}/images/restore")
-def restore_images(id: int, image_urls: List[str], db: Session = Depends(get_db)):
-    news = db.query(LatestNews).filter(LatestNews.id == id).first()
-    if not news:
-        raise HTTPException(status_code=404, detail="News not found")
-
-    deleted = [img for img in parse_images(news.deleted_images) if img not in image_urls]
-    news.deleted_images = ",".join(deleted)
-    db.commit()
-    db.refresh(news)
-
-    active = [img for img in parse_images(news.additionalimageurl) if img not in deleted]
-    return {"message": "Images restored", "active_images": active, "deleted_images": deleted}
+    return {"message": "Image deleted successfully"}
 
 
 # DELETE
