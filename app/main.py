@@ -43,6 +43,11 @@ app.include_router(issue_router)
 app.include_router(press_release_router)
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "sammridhvarma API is running"}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
