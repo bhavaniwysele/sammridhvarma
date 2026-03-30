@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 from app.database import Base, engine
 from app.routes.latest_news_routes import router as news_router
 from app.routes.appointment_routes import router as appointment_router
@@ -41,6 +42,12 @@ app.include_router(news_router)
 app.include_router(appointment_router)
 app.include_router(issue_router)
 app.include_router(press_release_router)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/favicon.png", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/")
