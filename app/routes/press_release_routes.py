@@ -2,11 +2,15 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.press_release import PressRelease
-from app.s3 import upload_to_s3, delete_from_s3
 from typing import Optional, List
 import uuid
 from datetime import datetime
+try:
+    from app.s3 import upload_to_s3, delete_from_s3
+except ImportError:
+    from s3 import upload_to_s3, delete_from_s3
 
+    
 router = APIRouter(prefix="/press-release", tags=["Press Release"])
 
 
