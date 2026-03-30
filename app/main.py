@@ -31,7 +31,10 @@ try:
 except Exception:
     pass
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
 app.include_router(news_router)
 app.include_router(appointment_router)
