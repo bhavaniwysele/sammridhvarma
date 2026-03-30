@@ -7,15 +7,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
-
-engine = create_engine(DATABASE_URL, poolclass=NullPool)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 Base = declarative_base()
 
+engine = None
+SessionLocal = None
+
+if DATABASE_URL:
+    engine = create_engine(DATABASE_URL, poolclass=NullPool)
+    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
 def get_db():
+    if not SessionLocal:
+        raise RuntimeError("DATABASE_URL is not configured")
     db = SessionLocal()
     try:
         yield db

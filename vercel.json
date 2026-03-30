@@ -12,12 +12,6 @@
       "dest": "api/index.py"
     }
   ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "ENV": "@env",
-    "ALLOWED_ORIGINS": "@allowed_origins",
-    "UPLOAD_DIR": "@upload_dir"
-  },
   "functions": {
     "api/index.py": {
       "maxDuration": 30

@@ -32,7 +32,8 @@ except Exception:
     pass
 
 try:
-    Base.metadata.create_all(bind=engine)
+    if engine:
+        Base.metadata.create_all(bind=engine)
 except Exception:
     pass
 
