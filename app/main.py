@@ -26,7 +26,10 @@ app.add_middleware(
 
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+try:
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+except Exception:
+    pass
 
 Base.metadata.create_all(bind=engine)
 
