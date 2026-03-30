@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.issues import Issue
-import shutil, os, re
+from app.s3 import upload_to_s3
+import re
 
 router = APIRouter(prefix="/issues", tags=["issues"])
 
-UPLOAD_FOLDER = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 
 @router.post("/submit-issue")
 def submit_issue(
@@ -26,20 +26,9 @@ def submit_issue(
         raise HTTPException(status_code=422, detail="Invalid email address")
 
     image_url = None
+    if image and image.filename:
+        image_url = upload_to_s3(image)
 
-    # 📸 Save Image
-    if image:
-        if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(UPLOAD_FOLDER)
-
-        file_path = os.path.join(UPLOAD_FOLDER, image.filename)
-
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-
-        image_url = file_path
-
-    # 💾 Save to DB
     new_issue = Issue(
         full_name=full_name,
         mobile_number=mobile_number,
@@ -54,10 +43,7 @@ def submit_issue(
     db.commit()
     db.refresh(new_issue)
 
-    return {
-        "message": "Issue submitted successfully",
-        "id": new_issue.id
-    }
+    return {"message": "Issue submitted successfully", "id": new_issue.id}
 
 
 @router.get("/")

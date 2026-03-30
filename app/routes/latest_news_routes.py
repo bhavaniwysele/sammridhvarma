@@ -6,19 +6,9 @@ from sqlalchemy.orm import Session
 from dateutil import parser
 from app.database import get_db
 from app.models.latest_news import LatestNews
+from app.s3 import upload_to_s3, delete_from_s3
 
 router = APIRouter(prefix="/latest-news", tags=["Latest News"])
-
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
-
-
-def save_file(file: UploadFile):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    file_name = f"{datetime.now().timestamp()}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, file_name)
-    with open(file_path, "wb") as buffer:
-        buffer.write(file.file.read())
-    return file_path
 
 
 def parse_images(raw: str) -> List[str]:
@@ -49,16 +39,16 @@ def create_news(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
-    main_image_path = save_file(main_image)
-    additional_paths = [save_file(img) for img in additional_images]
+    main_image_url = upload_to_s3(main_image)
+    additional_urls = [upload_to_s3(img) for img in additional_images if img.filename]
 
     news = LatestNews(
         date=parsed_date,
         maintitle=maintitle,
         subtitle=subtitle,
         description=description,
-        mainimageurl=main_image_path,
-        additionalimageurl=",".join(additional_paths)
+        mainimageurl=main_image_url,
+        additionalimageurl=",".join(additional_urls)
     )
 
     db.add(news)
@@ -120,16 +110,16 @@ def update_news(
     if is_valid(description):
         news.description = description
 
-    if main_image and hasattr(main_image, "filename") and main_image.filename:
-        news.mainimageurl = save_file(main_image)
+    if main_image and main_image.filename:
+        news.mainimageurl = upload_to_s3(main_image)
 
     existing = parse_images(news.additionalimageurl)
-    new_images = [
-        save_file(img)
+    new_urls = [
+        upload_to_s3(img)
         for img in (additional_images or [])
-        if img and hasattr(img, "filename") and img.filename
+        if img and img.filename
     ]
-    news.additionalimageurl = ",".join(existing + new_images)
+    news.additionalimageurl = ",".join(existing + new_urls)
 
     db.commit()
     db.refresh(news)
@@ -174,6 +164,10 @@ def delete_news(id: int, db: Session = Depends(get_db)):
     news = db.query(LatestNews).filter(LatestNews.id == id).first()
     if not news:
         raise HTTPException(status_code=404, detail="News not found")
+
+    for img in parse_images(news.additionalimageurl):
+        delete_from_s3(img)
+    delete_from_s3(news.mainimageurl)
 
     db.delete(news)
     db.commit()
