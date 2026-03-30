@@ -9,10 +9,9 @@ from datetime import datetime
 router = APIRouter(prefix="/appointment", tags=["Appointment"])
 
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# ✅ Create Appointment
+# Create Appointment
 @router.post("/appointments")
 def create_appointment(
     full_name: str = Form(...),
@@ -61,6 +60,7 @@ def create_appointment(
     # ✅ File upload handling
     file_path = None
     if file and file.filename and file.filename.strip() != "":
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
         unique_name = f"{file.filename}"
         file_path = os.path.join(UPLOAD_DIR, unique_name)
         with open(file_path, "wb") as buffer:

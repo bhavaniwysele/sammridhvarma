@@ -13,10 +13,9 @@ import zipfile
 router = APIRouter(prefix="/press-release", tags=["Press Release"])
 
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# 🔥 AUTO CODE GENERATION
+# AUTO CODE GENERATION
 def generate_code(db: Session):
     year = datetime.now().year
     last = db.query(PressRelease).order_by(PressRelease.id.desc()).first()
@@ -44,9 +43,9 @@ async def create_press_release(
         file_sizes = []
 
         for file in files:
-            # ✅ UNIQUE FILE NAME
             unique_name = f"{uuid.uuid4()}_{file.filename}"
             file_path = os.path.join(UPLOAD_DIR, unique_name)
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
 
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)

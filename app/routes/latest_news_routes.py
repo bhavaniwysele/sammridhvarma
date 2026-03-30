@@ -10,10 +10,10 @@ from app.models.latest_news import LatestNews
 router = APIRouter(prefix="/latest-news", tags=["Latest News"])
 
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def save_file(file: UploadFile):
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_name = f"{datetime.now().timestamp()}_{file.filename}"
     file_path = os.path.join(UPLOAD_DIR, file_name)
     with open(file_path, "wb") as buffer:
