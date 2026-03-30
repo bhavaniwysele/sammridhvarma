@@ -3,10 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from app.database import Base, engine
-from app.routes.latest_news_routes import router as news_router
-from app.routes.appointment_routes import router as appointment_router
-from app.routes.issue_routes import router as issue_router
-from app.routes.press_release_routes import router as press_release_router
+from app.routes import press_release_routes, appointment_routes, issue_routes, latest_news_routes
 
 ENV = os.environ.get("ENV", "production")
 
@@ -30,11 +27,11 @@ try:
 except Exception:
     pass
 
-app.include_router(news_router)
-app.include_router(appointment_router)
-app.include_router(issue_router)
-app.include_router(press_release_router)
 
+app.include_router(press_release_routes.router)
+app.include_router(appointment_routes.router)
+app.include_router(issue_routes.router)
+app.include_router(latest_news_routes.router)
 
 @app.get("/favicon.ico", include_in_schema=False)
 @app.get("/favicon.png", include_in_schema=False)
