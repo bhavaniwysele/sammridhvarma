@@ -2,9 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
-from dotenv import load_dotenv
 
-load_dotenv()
+# ❌ REMOVE load_dotenv (not needed in Vercel)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -14,16 +13,21 @@ engine = None
 SessionLocal = None
 
 if DATABASE_URL:
-    engine = create_engine(DATABASE_URL, poolclass=NullPool)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    try:
+        engine = create_engine(DATABASE_URL, poolclass=NullPool)
+        SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    except Exception as e:
+        print("DATABASE CONNECTION ERROR:", e)
+else:
+    print("WARNING: DATABASE_URL is not set")
 
 
 def get_db():
     if not SessionLocal:
         raise RuntimeError("DATABASE_URL is not configured")
+
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
