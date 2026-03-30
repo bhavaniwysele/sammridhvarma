@@ -8,7 +8,7 @@ from datetime import datetime
 
 router = APIRouter(prefix="/appointment", tags=["Appointment"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
@@ -60,8 +60,9 @@ def create_appointment(
 
     # ✅ File upload handling
     file_path = None
-    if file and file.filename != "":
-        file_path = f"{UPLOAD_DIR}/{file.filename}"
+    if file and file.filename and file.filename.strip() != "":
+        unique_name = f"{file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, unique_name)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
@@ -109,7 +110,7 @@ def update_status(id: int, status: str, db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter(Appointment.id == id).first()
 
     if not appointment:
-        return {"error": "Appointment not found"}
+        raise HTTPException(status_code=404, detail="Appointment not found")
 
     appointment.status = status
     db.commit()

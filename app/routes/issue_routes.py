@@ -58,3 +58,8 @@ def submit_issue(
         "message": "Issue submitted successfully",
         "id": new_issue.id
     }
+
+
+@router.get("/")
+def get_all_issues(db: Session = Depends(get_db)):
+    return db.query(Issue).order_by(Issue.created_at.desc()).all()

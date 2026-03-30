@@ -4,29 +4,38 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.database import Base, engine
 from app.routes.latest_news_routes import router as news_router
-from app.routes.appointment_routes import router 
-from app.models.appointments import Appointment  
-from app.routes import issue_routes
-from app.routes import press_release_routes
+from app.routes.appointment_routes import router as appointment_router
+from app.routes.issue_routes import router as issue_router
+from app.routes.press_release_routes import router as press_release_router
 
-app = FastAPI(title="sammridhvarma")
+ENV = os.environ.get("ENV", "production")
 
+app = FastAPI(
+    title="sammridhvarma",
+    docs_url="/docs" if ENV == "development" else None,
+    redoc_url="/redoc" if ENV == "development" else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "/tmp/uploads"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 Base.metadata.create_all(bind=engine)
 
 app.include_router(news_router)
-app.include_router(router)
-app.include_router(issue_routes.router)
-app.include_router(press_release_routes.router)
+app.include_router(appointment_router)
+app.include_router(issue_router)
+app.include_router(press_release_router)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}

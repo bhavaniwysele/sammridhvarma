@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.press_release import PressRelease
 from fastapi.responses import FileResponse
-from typing import Optional, Union,List, Any
+from typing import Optional, List
 import os
 import shutil
 import uuid
@@ -12,7 +12,7 @@ import zipfile
 
 router = APIRouter(prefix="/press-release", tags=["Press Release"])
 
-UPLOAD_DIR = "uploads/press_release"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
