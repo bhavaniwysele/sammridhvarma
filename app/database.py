@@ -2,8 +2,9 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
+from dotenv import load_dotenv
 
-# ❌ REMOVE load_dotenv (not needed in Vercel)
+load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 

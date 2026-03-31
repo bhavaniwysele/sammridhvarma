@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -27,11 +30,11 @@ try:
 except Exception:
     pass
 
-
-app.include_router(press_release_routes.router)
-app.include_router(appointment_routes.router)
-app.include_router(issue_routes.router)
 app.include_router(latest_news_routes.router)
+app.include_router(press_release_routes.router)
+app.include_router(issue_routes.router)
+app.include_router(appointment_routes.router)
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 @app.get("/favicon.png", include_in_schema=False)
