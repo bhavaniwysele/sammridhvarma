@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from app.database import Base, engine
 from app.routes import press_release_routes, appointment_routes, issue_routes, latest_news_routes
+from fastapi.responses import RedirectResponse
 
 ENV = os.environ.get("ENV", "production")
 
@@ -44,8 +45,7 @@ def favicon():
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "sammridhvarma API is running"}
-
+    return RedirectResponse(url="/docs")
 
 @app.get("/health")
 def health():
