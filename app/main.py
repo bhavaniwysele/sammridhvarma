@@ -8,6 +8,8 @@ from fastapi.responses import Response
 from app.database import Base, engine
 from app.routes import press_release_routes, appointment_routes, issue_routes, latest_news_routes
 from fastapi.responses import RedirectResponse
+from app.routes import upcoming_events_routes
+from app.routes import auth_routes
 
 ENV = os.environ.get("ENV", "production")
 
@@ -31,11 +33,12 @@ try:
 except Exception:
     pass
 
+app.include_router(auth_routes.router)
 app.include_router(latest_news_routes.router)
 app.include_router(press_release_routes.router)
 app.include_router(issue_routes.router)
 app.include_router(appointment_routes.router)
-
+app.include_router(upcoming_events_routes.router)
 
 @app.get("/favicon.ico", include_in_schema=False)
 @app.get("/favicon.png", include_in_schema=False)
