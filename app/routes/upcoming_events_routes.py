@@ -41,17 +41,52 @@ def verify_google_token(token: str) -> dict:
 # STEP 1: Frontend sends Google token → backend verifies → returns email
 @router.post("/verify-google-token")
 def verify_token(data: dict):
-    token = data.get("token")
+    token = data.get("token") or data.get("id_token")
     if not token:
         raise HTTPException(status_code=400, detail="Token is required")
 
     idinfo = verify_google_token(token)
     return {
+        "verified": True,
         "email": idinfo["email"],
-        "name": idinfo.get("name"),
-        "picture": idinfo.get("picture")
+        "name": idinfo.get("name")
     }
 
+
+# CREATE EVENT (admin)
+@router.post("/create")
+def create_event(
+    title: str = Form(..., description="Event title"),
+    description: str = Form(..., description="Event description"),
+    event_date: str = Form(..., description="Date in DD-MM-YYYY format"),
+    start_time: str = Form(..., description="Start time e.g. 10:00"),
+    end_time: str = Form(..., description="End time e.g. 13:00"),
+    location: str = Form(..., description="Event venue"),
+    image: UploadFile = File(..., description="Event image"),
+    db: Session = Depends(get_db)
+):
+    try:
+        event_date_obj = datetime.strptime(event_date, "%d-%m-%Y").date()
+        start_time_obj = parse_time(start_time)
+        end_time_obj = parse_time(end_time)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    image_url = upload_to_s3(image)
+
+    new_event = Event(
+        title=title,
+        description=description,
+        event_date=event_date_obj,
+        start_time=start_time_obj,
+        end_time=end_time_obj,
+        location=location,
+        image_url=image_url
+    )
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+    return {"event_id": new_event.id, "message": "Event created successfully"}
 
 # STEP 2: User fills form and submits with verified email
 @router.post("/register")
@@ -122,43 +157,6 @@ Sammridhvarma Team"""
 
     background_tasks.add_task(send_email, recipients, subject, body)
     return {"message": "Registered successfully"}
-
-
-# CREATE EVENT (admin)
-@router.post("/create")
-def create_event(
-    title: str = Form(...),
-    description: str = Form(...),
-    event_date: str = Form(...),
-    start_time: str = Form(...),
-    end_time: str = Form(...),
-    location: str = Form(...),
-    image: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
-    try:
-        event_date_obj = datetime.strptime(event_date, "%d-%m-%Y").date()
-        start_time_obj = parse_time(start_time)
-        end_time_obj = parse_time(end_time)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-
-    image_url = upload_to_s3(image)
-
-    new_event = Event(
-        title=title,
-        description=description,
-        event_date=event_date_obj,
-        start_time=start_time_obj,
-        end_time=end_time_obj,
-        location=location,
-        image_url=image_url
-    )
-    db.add(new_event)
-    db.commit()
-    db.refresh(new_event)
-    return {"event_id": new_event.id, "message": "Event created successfully"}
-
 
 # GET ALL EVENTS
 @router.get("/")
