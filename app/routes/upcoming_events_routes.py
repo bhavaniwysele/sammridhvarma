@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.upcoming_events_models import Event, Registration
 from app.schemas.upcoming_events_schemas import RegistrationCreate
 from app.utils.email_upcoming_events import send_email
-from app.s3 import upload_to_s3
+from app.s3 import upload_to_s3, generate_presigned_url
 from datetime import datetime
 
 router = APIRouter(prefix="/UpcomingEvents", tags=["UpcomingEvents"])
@@ -36,6 +36,19 @@ def verify_google_token(token: str) -> dict:
         raise Exception("Token verification failed for all audiences")
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid Google token")
+
+
+def event_with_url(event):
+    return {
+        "id": event.id,
+        "title": event.title,
+        "description": event.description,
+        "event_date": event.event_date,
+        "start_time": event.start_time,
+        "end_time": event.end_time,
+        "location": event.location,
+        "image_url": generate_presigned_url(event.image_url)
+    }
 
 
 # STEP 1: Frontend sends Google token → backend verifies → returns email
@@ -161,7 +174,15 @@ Sammridhvarma Team"""
 # GET ALL EVENTS
 @router.get("/")
 def get_events(db: Session = Depends(get_db)):
-    return db.query(Event).all()
+    return [event_with_url(e) for e in db.query(Event).all()]
+
+# GET SINGLE EVENT
+@router.get("/{id}")
+def get_event(id: int, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event_with_url(event)
 
 # UPDATE EVENT
 @router.put("/{id}")

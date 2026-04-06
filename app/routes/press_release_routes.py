@@ -5,16 +5,7 @@ from app.models.press_release import PressRelease
 from typing import Optional, List
 import uuid
 from datetime import datetime
-try:
-    from app.s3 import upload_to_s3, delete_from_s3
-except Exception as e:
-    print("S3 IMPORT ERROR:", e)
-
-    def upload_to_s3(file):
-        return "dummy-url"
-
-    def delete_from_s3(url):
-        return True
+from app.s3 import upload_to_s3, delete_from_s3, generate_presigned_url
 
 router = APIRouter(prefix="/press-release", tags=["Press Release"])
 
@@ -30,6 +21,20 @@ def generate_code(db: Session):
 
 def clean_value(value):
     return None if value in [None, "", "string"] else value
+
+
+def press_release_with_urls(item):
+    keys = [k for k in (item.file_urls or "").split(",") if k]
+    return {
+        "id": item.id,
+        "code": item.code,
+        "title": item.title,
+        "description": item.description,
+        "date": item.date,
+        "file_urls": [generate_presigned_url(k) for k in keys],
+        "file_sizes": (item.file_sizes or "").split(","),
+        "created_at": item.created_at
+    }
 
 
 # CREATE
@@ -68,7 +73,7 @@ async def create_press_release(
     db.add(new_item)
     db.commit()
     db.refresh(new_item)
-    return {"message": "Created successfully", "data": new_item}
+    return {"message": "Created successfully", "data": press_release_with_urls(new_item)}
 
 
 # GET WITH PAGINATION
@@ -79,9 +84,8 @@ def get_press_releases(page: int = 1, limit: int = 3, db: Session = Depends(get_
     total = query.count()
     data = query.order_by(PressRelease.id.desc()).offset(skip).limit(limit).all()
     total_pages = (total + limit - 1) // limit
-
     return {
-        "data": data,
+        "data": [press_release_with_urls(item) for item in data],
         "pagination": {
             "total": total,
             "page": page,

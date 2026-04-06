@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from dateutil import parser
 from app.database import get_db
 from app.models.latest_news import LatestNews
-from app.s3 import upload_to_s3, delete_from_s3
+from app.s3 import upload_to_s3, delete_from_s3, generate_presigned_url
 
 router = APIRouter(prefix="/latest-news", tags=["Latest News"])
 
@@ -21,6 +21,18 @@ def parse_images(raw: str) -> List[str]:
         except Exception:
             return []
     return [img for img in raw.split(",") if img]
+
+
+def news_with_urls(news):
+    return {
+        "id": news.id,
+        "date": news.date,
+        "maintitle": news.maintitle,
+        "subtitle": news.subtitle,
+        "description": news.description,
+        "mainimageurl": generate_presigned_url(news.mainimageurl),
+        "additionalimageurl": [generate_presigned_url(k) for k in parse_images(news.additionalimageurl)]
+    }
 
 
 # CREATE
@@ -60,7 +72,8 @@ def create_news(
 # READ ALL
 @router.get("/")
 def get_latest_news(db: Session = Depends(get_db)):
-    return db.query(LatestNews).order_by(LatestNews.id.desc()).limit(4).all()
+    news_list = db.query(LatestNews).order_by(LatestNews.id.desc()).limit(4).all()
+    return [news_with_urls(n) for n in news_list]
 
 
 # READ ONE
@@ -69,7 +82,7 @@ def get_news(id: int, db: Session = Depends(get_db)):
     news = db.query(LatestNews).filter(LatestNews.id == id).first()
     if not news:
         raise HTTPException(status_code=404, detail="News not found")
-    return news
+    return news_with_urls(news)
 
 
 # UPDATE
