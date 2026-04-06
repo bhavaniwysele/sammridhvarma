@@ -89,7 +89,7 @@ def upload_to_s3(file: UploadFile) -> str:
 # ==============================
 # GENERATE PRE-SIGNED URL
 # ==============================
-def generate_presigned_url(file_key: str, expires: int = 3600) -> str:
+def generate_presigned_url(file_key: str, expires: int = 900) -> str:
     if not file_key:
         return None
 
