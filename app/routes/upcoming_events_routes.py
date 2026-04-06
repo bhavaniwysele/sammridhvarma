@@ -163,6 +163,66 @@ Sammridhvarma Team"""
 def get_events(db: Session = Depends(get_db)):
     return db.query(Event).all()
 
+# UPDATE EVENT
+@router.put("/{id}")
+def update_event(
+    id: int,
+    title: str = Form(None),
+    description: str = Form(None),
+    event_date: str = Form(None, description="DD-MM-YYYY"),
+    start_time: str = Form(None),
+    end_time: str = Form(None),
+    location: str = Form(None),
+    image: UploadFile = File(None),
+    db: Session = Depends(get_db)
+):
+    event = db.query(Event).filter(Event.id == id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    def is_valid(v):
+        return v and v.strip() != "" and v != "string"
+
+    if is_valid(title):
+        event.title = title
+    if is_valid(description):
+        event.description = description
+    if is_valid(location):
+        event.location = location
+    if is_valid(event_date):
+        try:
+            event.event_date = datetime.strptime(event_date, "%d-%m-%Y").date()
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid date format. Use DD-MM-YYYY")
+    if is_valid(start_time):
+        try:
+            event.start_time = parse_time(start_time)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid start time")
+    if is_valid(end_time):
+        try:
+            event.end_time = parse_time(end_time)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid end time")
+    if image and image.filename and image.filename.strip() != "":
+        event.image_url = upload_to_s3(image)
+
+    db.commit()
+    db.refresh(event)
+    return {"message": "Event updated successfully", "event_id": event.id}
+
+
+# DELETE EVENT
+@router.delete("/{id}")
+def delete_event(id: int, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    db.query(Registration).filter(Registration.event_id == id).delete()
+    db.delete(event)
+    db.commit()
+    return {"message": "Event deleted successfully"}
+
 
 # GET REGISTRATIONS FOR AN EVENT (admin)
 @router.get("/{id}/registrations")
