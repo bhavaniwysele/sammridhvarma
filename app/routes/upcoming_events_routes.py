@@ -6,6 +6,7 @@ from app.models.upcoming_events_models import Event, Registration
 from app.schemas.upcoming_events_schemas import RegistrationCreate
 from app.utils.email_upcoming_events import send_email
 from app.s3 import upload_to_s3, generate_presigned_url
+from app.services.auth_service import verify_google_header
 from datetime import datetime
 
 router = APIRouter(prefix="/UpcomingEvents", tags=["UpcomingEvents"])
@@ -106,7 +107,8 @@ def create_event(
 def register_user(
     data: RegistrationCreate,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    google_user: dict = Depends(verify_google_header)
 ):
     email = data.email
 

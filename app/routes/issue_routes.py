@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.issues import Issue
 from app.s3 import upload_to_s3
+from app.services.auth_service import verify_google_header
 import re
 
 router = APIRouter(prefix="/issues", tags=["issues"])
@@ -17,7 +18,8 @@ def submit_issue(
     category: str = Form(...),
     description: str = Form(...),
     image: UploadFile = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    google_user: dict = Depends(verify_google_header)
 ):
     if not mobile_number.isdigit() or len(mobile_number) != 10:
         raise HTTPException(status_code=422, detail="Phone number must be exactly 10 digits")

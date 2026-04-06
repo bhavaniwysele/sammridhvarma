@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.appointments import Appointment
 from app.s3 import upload_to_s3
+from app.services.auth_service import verify_google_header
 import os, re
 from datetime import datetime
 
@@ -24,7 +25,8 @@ def create_appointment(
     subject: str = Form(...),
     description: str = Form(...),
     file: UploadFile = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    google_user: dict = Depends(verify_google_header)
 ):
     if not mobile_number.isdigit() or len(mobile_number) != 10:
         raise HTTPException(status_code=422, detail="Phone number must be exactly 10 digits")
